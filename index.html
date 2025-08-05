@@ -26,7 +26,7 @@
         </p>
 
         <!-- Loading state -->
-        <div id="loading" class="text-center text-gray-500 hidden">
+        <div id="loading" class="text-center text-gray-500">
             <div class="flex items-center justify-center space-x-2">
                 <div class="w-4 h-4 rounded-full animate-bounce bg-green-500"></div>
                 <div class="w-4 h-4 rounded-full animate-bounce bg-green-500 delay-100"></div>
@@ -36,8 +36,8 @@
         </div>
 
         <!-- App content -->
-        <div id="app" class="space-y-4">
-            <button id="shareButton" class="w-full bg-green-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:bg-green-600 transition duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:transform-none disabled:shadow-none" onclick="shareMessage()" disabled>
+        <div id="app" class="space-y-4 hidden">
+            <button id="shareButton" class="w-full bg-green-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:bg-green-600 transition duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:transform-none disabled:shadow-none" onclick="shareMessage()">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.478-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6.632l6.632-3.316m0 0a3 3 0 100-6 3 3 0 000 6z"/>
                 </svg>
@@ -61,37 +61,42 @@
         const shareButton = document.getElementById('shareButton');
         const statusMessage = document.getElementById('statusMessage');
 
-        // แสดงสถานะการโหลด
-        loadingDiv.classList.remove('hidden');
-        appDiv.classList.add('hidden');
-        shareButton.disabled = true;
-
         // ฟังก์ชันสำหรับเริ่มต้น LIFF
         async function initializeLiff() {
-            try {
-                await liff.init({ liffId: myLiffId });
-                console.log("LIFF initialization successful.");
-
-                if (liff.isLoggedIn()) {
-                    console.log("User is already logged in.");
-                    // ถ้าผู้ใช้ล็อกอินอยู่แล้ว ให้เริ่มใช้งานได้เลย
-                    handleAppReady();
-                } else {
-                    console.log("User is not logged in. Logging in...");
-                    // ถ้าผู้ใช้ยังไม่ได้ล็อกอิน ให้ทำการล็อกอิน
-                    liff.login();
+            // หน่วงเวลาเล็กน้อยเพื่อให้แน่ใจว่า LIFF SDK โหลดเสร็จแล้ว
+            setTimeout(async () => {
+                // ตรวจสอบว่า LIFF SDK พร้อมใช้งานหรือไม่
+                if (typeof liff === 'undefined') {
+                    console.error("LIFF SDK is not defined. Please check if the script is loaded correctly.");
+                    statusMessage.textContent = 'ไม่สามารถโหลด LIFF SDK ได้ โปรดลองใหม่อีกครั้ง';
+                    loadingDiv.classList.add('hidden');
+                    return;
                 }
-            } catch (err) {
-                console.error("LIFF initialization failed:", err);
-                statusMessage.textContent = 'การเชื่อมต่อ LIFF ล้มเหลว โปรดตรวจสอบ LIFF ID และการตั้งค่า';
-            }
+                
+                try {
+                    await liff.init({ liffId: myLiffId });
+                    console.log("LIFF initialization successful.");
+
+                    // ตรวจสอบว่าผู้ใช้ล็อกอินอยู่หรือไม่
+                    if (!liff.isLoggedIn()) {
+                        console.log("User is not logged in. Redirecting to login...");
+                        liff.login();
+                    } else {
+                        console.log("User is already logged in. App is ready.");
+                        handleAppReady();
+                    }
+                } catch (err) {
+                    console.error("LIFF initialization failed:", err);
+                    statusMessage.textContent = 'การเชื่อมต่อ LIFF ล้มเหลว โปรดตรวจสอบ LIFF ID และการตั้งค่า';
+                    loadingDiv.classList.add('hidden');
+                }
+            }, 500); // หน่วงเวลา 500 มิลลิวินาที
         }
 
         // ฟังก์ชันเมื่อ LIFF พร้อมใช้งาน
         function handleAppReady() {
             loadingDiv.classList.add('hidden');
             appDiv.classList.remove('hidden');
-            shareButton.disabled = false;
             statusMessage.textContent = 'เชื่อมต่อ LIFF สำเร็จแล้ว!';
         }
 
@@ -210,17 +215,14 @@
 
         // ฟังก์ชันสำหรับแชร์ข้อความ
         async function shareMessage() {
-            // ตรวจสอบว่าเปิดใน LINE หรือไม่
             if (!liff.isInClient()) {
                 alert('กรุณาเปิด LIFF App ใน LINE เพื่อใช้งาน Share Target Picker');
                 return;
             }
 
             try {
-                // เรียกใช้ Share Target Picker
                 const flexMessage = createFlexMessage();
                 await liff.shareTargetPicker([flexMessage]);
-
                 statusMessage.textContent = 'แชร์ข้อความสำเร็จแล้ว!';
                 console.log('Flex Message shared successfully.');
             } catch (err) {
@@ -233,10 +235,9 @@
                 }
             }
         }
-
+        
         // เริ่มต้น LIFF เมื่อหน้าเว็บโหลดเสร็จ
         window.addEventListener('load', initializeLiff);
-
     </script>
 </body>
 </html>
