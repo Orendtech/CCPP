@@ -3,23 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>แชร์ข้อความ Flex</title>
+  <title>แชร์ Flex Message</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 40px;
+      padding: 20px;
       background-color: #f8f9fa;
+      color: #333;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: monospace;
     }
     button {
       background-color: #06c755;
       color: white;
       border: none;
       padding: 15px 30px;
-      font-size: 18px;
+      font-size: 16px;
       border-radius: 10px;
       cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
       box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
     }
     button:hover {
@@ -28,30 +48,47 @@
   </style>
 </head>
 <body>
-  <h2>📤 แชร์ข้อความ Flex ไปที่ LINE</h2>
-  <button id="shareBtn">แชร์ข้อความ</button>
+  <h2>📤 แชร์ Flex Message ไปที่ LINE</h2>
+  
+  <label for="altText">ชื่อ Flex (altText):</label>
+  <input type="text" id="altText" placeholder="เช่น รายงานสรุปประจำวัน">
+
+  <label for="flexJson">โค้ด JSON ของ Flex:</label>
+  <textarea id="flexJson" rows="12" placeholder='{
+  "type": "bubble",
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      { "type": "text", "text": "📌 รายงานสรุป", "weight": "bold", "size": "xl" },
+      { "type": "text", "text": "ยอดขายวันนี้: 120,000 บาท", "margin": "md" },
+      { "type": "text", "text": "ลูกค้าใหม่: 15 คน", "margin": "sm" }
+    ]
+  }
+}'></textarea>
+
+  <button id="shareBtn">แชร์ไปที่ LINE</button>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       liff.init({ liffId: "2007877136-D2ywlgJy" }).then(() => {
         document.getElementById('shareBtn').addEventListener('click', () => {
+          const altText = document.getElementById('altText').value || "ข้อความ Flex";
+          let flexContent;
+
+          try {
+            flexContent = JSON.parse(document.getElementById('flexJson').value);
+          } catch (e) {
+            alert("JSON ไม่ถูกต้อง: " + e);
+            return;
+          }
+
           liff.shareTargetPicker([{
             type: "flex",
-            altText: "รายงานสรุป",
-            contents: {
-              type: "bubble",
-              body: {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  { type: "text", text: "📌 รายงานสรุป", weight: "bold", size: "xl" },
-                  { type: "text", text: "ยอดขายวันนี้: 120,000 บาท", margin: "md" },
-                  { type: "text", text: "ลูกค้าใหม่: 15 คน", margin: "sm" }
-                ]
-              }
-            }
+            altText: altText,
+            contents: flexContent
           }]).then(() => {
-            liff.closeWindow(); // ปิดหลังแชร์เสร็จ
+            liff.closeWindow();
           }).catch((err) => {
             alert("เกิดข้อผิดพลาด: " + err);
           });
