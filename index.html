@@ -53,7 +53,14 @@
             // ตรวจสอบให้แน่ใจว่า LIFF SDK โหลดแล้ว
             if (typeof liff === 'undefined') {
                 console.error("LIFF SDK not loaded.");
-                document.getElementById('loading').innerHTML = '<p class="text-red-500">ไม่สามารถโหลด LIFF SDK ได้ โปรดลองใหม่อีกครั้ง</p>';
+                // ซ่อน loading screen และแสดงข้อความแจ้งเตือนที่ชัดเจน
+                document.getElementById('loading').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('app-content').classList.remove('hidden');
+                    document.getElementById('app-content').classList.remove('opacity-0');
+                    showMessage("ข้อผิดพลาด: ไม่สามารถโหลด LIFF SDK ได้ กรุณาเปิดแอปพลิเคชันนี้ในเบราว์เซอร์ของ LINE");
+                }, 300);
                 return;
             }
             try {
@@ -88,8 +95,10 @@
             document.getElementById('shareButton').addEventListener('click', shareFlexMessage);
         }
         
-        // เริ่มต้นการทำงานของ LIFF ทันทีที่สคริปต์ถูกโหลด
-        initializeLiff();
+        // เริ่มต้นการทำงานเมื่อหน้าเว็บโหลดเสร็จ
+        window.onload = function() {
+            initializeLiff();
+        };
     </script>
 
 </body>
