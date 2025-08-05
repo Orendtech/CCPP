@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แชร์ Flex Message</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e6e9f0;
+        }
+    </style>
+</head>
+<body class="p-4 flex flex-col items-center justify-center min-h-screen text-gray-800">
+
+    <!-- Loading screen -->
+    <div id="loading" class="flex flex-col items-center justify-center absolute inset-0 bg-gray-100 z-50 transition-opacity duration-300">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+        <p class="mt-4 text-lg text-blue-600">กำลังโหลด LIFF App...</p>
+    </div>
+
+    <!-- Main content area -->
+    <div id="app-content" class="container max-w-sm bg-white p-6 rounded-2xl shadow-xl transition-opacity duration-300 opacity-0 hidden">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">แชร์ Flex Message</h1>
+        <p class="text-center text-gray-500 mb-6">กดปุ่มด้านล่างเพื่อแชร์ข้อความ Flex Message ไปยังเพื่อนหรือกลุ่ม</p>
+
+        <!-- Message box for errors or notices -->
+        <div id="message-box" class="hidden bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded" role="alert">
+            <p id="message-text" class="font-bold"></p>
+        </div>
+
+        <!-- Button to trigger Share Target Picker -->
+        <button id="shareButton" class="w-full bg-green-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-green-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300">
+            แชร์ข้อความเฟค
+        </button>
+    </div>
+
+    <!-- LINE LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/2.22.3/sdk.js"></script>
+    <script>
+        // ฟังก์ชันสำหรับแสดงข้อความในหน้าเว็บแทน alert()
+        function showMessage(text) {
+            const msgBox = document.getElementById('message-box');
+            const msgText = document.getElementById('message-text');
+            msgText.innerText = text;
+            msgBox.classList.remove('hidden');
+        }
+
+        // ฟังก์ชันสำหรับเริ่มต้น LIFF
+        async function initializeLiff() {
+            // ตรวจสอบให้แน่ใจว่า LIFF SDK โหลดแล้ว
+            if (typeof liff === 'undefined') {
+                console.error("LIFF SDK not loaded.");
+                document.getElementById('loading').innerHTML = '<p class="text-red-500">ไม่สามารถโหลด LIFF SDK ได้ โปรดลองใหม่อีกครั้ง</p>';
+                return;
+            }
+            try {
+                // Initializing the LIFF app with your LIFF ID.
+                // Replace "YOUR_LIFF_ID" with the actual LIFF ID from LINE Developers Console.
+                await liff.init({
+                    liffId: "YOUR_LIFF_ID"
+                });
+
+                // ตรวจสอบว่า LIFF เริ่มต้นสำเร็จหรือไม่
+                if (liff.isLoggedIn()) {
+                    console.log("LIFF initialized successfully.");
+                    // แสดงเนื้อหาของแอปหลังจากโหลดเสร็จ
+                    document.getElementById('loading').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('app-content').classList.remove('hidden');
+                        document.getElementById('app-content').classList.remove('opacity-0');
+                    }, 300);
+                } else {
+                    // หากไม่ได้ล็อกอิน ให้ทำการล็อกอินก่อน
+                    liff.login();
+                }
+
+            } catch (err) {
+                console.error("LIFF initialization failed", err);
+                // แสดงข้อความผิดพลาดหาก LIFF ไม่สามารถเริ่มต้นได้
+                document.getElementById('loading').innerHTML = '<p class="text-red-500">ไม่สามารถโหลด LIFF ได้ โปรดลองใหม่อีกครั้ง</p>';
+            }
+
+            // เพิ่ม Event Listener ให้กับปุ่ม
+            document.getElementById('shareButton').addEventListener('click', shareFlexMessage);
+        }
+        
+        // เริ่มต้นการทำงานของ LIFF ทันทีที่สคริปต์ถูกโหลด
+        initializeLiff();
+    </script>
+
+</body>
+</html>
