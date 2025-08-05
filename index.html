@@ -3,194 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แชร์ Flex Message</title>
-    <!-- Tailwind CSS CDN for styling -->
+    <title>Share Target Picker App</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #e6e9f0;
         }
     </style>
-    <!-- LINE LIFF SDK -->
-    <script src="https://static.line-scdn.net/liff/2.22.3/sdk.js"></script>
 </head>
-<body class="p-4 flex flex-col items-center justify-center min-h-screen text-gray-800">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl max-w-sm w-full space-y-6">
+        <h1 class="text-3xl font-bold text-gray-800 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline-block mr-2 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM12 15a4 4 0 01-8 0v3h8v-3zM6 16a2 2 0 00-2 2h4a2 2 0 00-2-2z"/>
+            </svg>
+            Share Target Picker
+        </h1>
+        <p class="text-gray-600 text-center">
+            กดปุ่มด้านล่างเพื่อแชร์ข้อความไปยังเพื่อนหรือกลุ่มใน LINE
+        </p>
 
-    <!-- Loading screen -->
-    <div id="loading" class="flex flex-col items-center justify-center absolute inset-0 bg-gray-100 z-50 transition-opacity duration-300">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
-        <p class="mt-4 text-lg text-blue-600">กำลังโหลด LIFF App...</p>
-    </div>
-
-    <!-- Main content area -->
-    <div id="app-content" class="container max-w-sm bg-white p-6 rounded-2xl shadow-xl transition-opacity duration-300 opacity-0 hidden">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">แชร์ Flex Message</h1>
-        <p class="text-center text-gray-500 mb-6">แก้ไขโค้ด Flex Message ในรูปแบบ JSON ด้านล่าง และกดปุ่มเพื่อแชร์</p>
-
-        <!-- Message box for errors or notices -->
-        <div id="message-box" class="hidden bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded" role="alert">
-            <p id="message-text" class="font-bold"></p>
+        <!-- Loading state -->
+        <div id="loading" class="text-center text-gray-500 hidden">
+            <div class="flex items-center justify-center space-x-2">
+                <div class="w-4 h-4 rounded-full animate-bounce bg-green-500"></div>
+                <div class="w-4 h-4 rounded-full animate-bounce bg-green-500 delay-100"></div>
+                <div class="w-4 h-4 rounded-full animate-bounce bg-green-500 delay-200"></div>
+            </div>
+            <p class="mt-2">กำลังโหลด LIFF...</p>
         </div>
 
-        <!-- Textarea for Flex Message JSON input -->
-        <div class="mb-4">
-            <label for="flexJsonInput" class="block text-sm font-medium text-gray-700 mb-1">Flex Message JSON:</label>
-            <textarea id="flexJsonInput" rows="15" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"></textarea>
+        <!-- App content -->
+        <div id="app" class="space-y-4">
+            <button id="shareButton" class="w-full bg-green-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:bg-green-600 transition duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:transform-none disabled:shadow-none" onclick="shareMessage()" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.478-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6.632l6.632-3.316m0 0a3 3 0 100-6 3 3 0 000 6z"/>
+                </svg>
+                แชร์ไปยัง LINE
+            </button>
+            
+            <div id="statusMessage" class="text-sm text-center"></div>
         </div>
-
-        <!-- Button to trigger Share Target Picker -->
-        <button id="shareButton" class="w-full bg-green-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-green-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300">
-            แชร์ Flex Message
-        </button>
     </div>
+
+    <!-- LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/2.22.3/liff.js"></script>
 
     <script>
-        // ฟังก์ชันสำหรับแสดงข้อความในหน้าเว็บแทน alert()
-        function showMessage(text) {
-            const msgBox = document.getElementById('message-box');
-            const msgText = document.getElementById('message-text');
-            msgText.innerText = text;
-            msgBox.classList.remove('hidden');
-        }
+        // LIFF ID ที่คุณให้มา
+        const myLiffId = "2007877136-D2ywlgJy";
+
+        // Element ใน DOM
+        const loadingDiv = document.getElementById('loading');
+        const appDiv = document.getElementById('app');
+        const shareButton = document.getElementById('shareButton');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // แสดงสถานะการโหลด
+        loadingDiv.classList.remove('hidden');
+        appDiv.classList.add('hidden');
+        shareButton.disabled = true;
 
         // ฟังก์ชันสำหรับเริ่มต้น LIFF
         async function initializeLiff() {
-            // ตรวจสอบให้แน่ใจว่า LIFF SDK โหลดแล้ว
-            if (typeof liff === 'undefined') {
-                console.error("LIFF SDK not loaded.");
-                // ซ่อน loading screen และแสดงข้อความแจ้งเตือนที่ชัดเจน
-                document.getElementById('loading').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('app-content').classList.remove('hidden');
-                    document.getElementById('app-content').classList.remove('opacity-0');
-                    showMessage("ข้อผิดพลาด: ไม่สามารถโหลด LIFF SDK ได้ กรุณาเปิดแอปพลิเคชันนี้ในเบราว์เซอร์ของ LINE");
-                }, 300);
-                return;
-            }
             try {
-                // Initializing the LIFF app with your LIFF ID.
-                await liff.init({
-                    liffId: "2007877136-D2ywlgJy"
-                });
+                await liff.init({ liffId: myLiffId });
+                console.log("LIFF initialization successful.");
 
-                // ตรวจสอบว่า LIFF เริ่มต้นสำเร็จหรือไม่
                 if (liff.isLoggedIn()) {
-                    console.log("LIFF initialized successfully.");
-                    // แสดงเนื้อหาของแอปหลังจากโหลดเสร็จ
-                    document.getElementById('loading').style.opacity = '0';
-                    setTimeout(() => {
-                        document.getElementById('loading').style.display = 'none';
-                        document.getElementById('app-content').classList.remove('hidden');
-                        document.getElementById('app-content').classList.remove('opacity-0');
-                        // ใส่ JSON ตัวอย่างลงใน textarea
-                        document.getElementById('flexJsonInput').value = JSON.stringify({
-                            type: "flex",
-                            altText: "Flex Message สำหรับแชร์ข้อความเฟค",
-                            contents: {
-                                type: "bubble",
-                                body: {
-                                    type: "box",
-                                    layout: "vertical",
-                                    contents: [
-                                        {
-                                            type: "text",
-                                            text: "📢 ประกาศ!",
-                                            weight: "bold",
-                                            size: "xl",
-                                            color: "#FF4500",
-                                            align: "center"
-                                        },
-                                        {
-                                            type: "text",
-                                            text: "นี่คือ Flex Message ที่สามารถแก้ไขได้",
-                                            size: "md",
-                                            align: "center",
-                                            wrap: true,
-                                            margin: "md"
-                                        },
-                                        {
-                                            type: "box",
-                                            layout: "horizontal",
-                                            contents: [
-                                                {
-                                                    type: "text",
-                                                    text: "สถานะ:",
-                                                    weight: "bold",
-                                                    color: "#555555",
-                                                    size: "sm"
-                                                },
-                                                {
-                                                    type: "text",
-                                                    text: "ข้อมูลใหม่",
-                                                    color: "#00B900",
-                                                    size: "sm",
-                                                    align: "end"
-                                                }
-                                            ],
-                                            margin: "md"
-                                        }
-                                    ]
-                                }
-                            }
-                        }, null, 2);
-                    }, 300);
+                    console.log("User is already logged in.");
+                    // ถ้าผู้ใช้ล็อกอินอยู่แล้ว ให้เริ่มใช้งานได้เลย
+                    handleAppReady();
                 } else {
-                    // หากไม่ได้ล็อกอิน ให้ทำการล็อกอินก่อน
+                    console.log("User is not logged in. Logging in...");
+                    // ถ้าผู้ใช้ยังไม่ได้ล็อกอิน ให้ทำการล็อกอิน
                     liff.login();
                 }
             } catch (err) {
-                console.error("LIFF initialization failed", err);
-                // แสดงข้อความผิดพลาดหาก LIFF ไม่สามารถเริ่มต้นได้
-                document.getElementById('loading').innerHTML = '<p class="text-red-500">ไม่สามารถโหลด LIFF ได้ โปรดลองใหม่อีกครั้ง</p>';
+                console.error("LIFF initialization failed:", err);
+                statusMessage.textContent = 'การเชื่อมต่อ LIFF ล้มเหลว โปรดตรวจสอบ LIFF ID และการตั้งค่า';
             }
-
-            // เพิ่ม Event Listener ให้กับปุ่ม
-            document.getElementById('shareButton').addEventListener('click', shareFlexMessage);
         }
-        
-        // ฟังก์ชันสำหรับแชร์ Flex Message ที่ได้จาก Textarea
-        function shareFlexMessage() {
-            // ตรวจสอบว่า LIFF สามารถใช้งาน Share Target Picker ได้หรือไม่
-            if (!liff.isApiAvailable('shareTargetPicker')) {
-                showMessage("Share Target Picker ไม่สามารถใช้งานได้บนอุปกรณ์นี้");
-                return;
-            }
 
-            // รับค่า JSON จาก textarea
-            const flexJsonString = document.getElementById('flexJsonInput').value;
-            let flexMessage;
-            try {
-                // แปลง string JSON เป็น JavaScript object
-                flexMessage = JSON.parse(flexJsonString);
-            } catch (error) {
-                showMessage(`ข้อผิดพลาด: รูปแบบ JSON ไม่ถูกต้อง. ${error.message}`);
-                return;
-            }
-            
-            // เรียกใช้ Share Target Picker พร้อมกับข้อมูล Flex Message ที่ได้จากการแก้ไข
-            liff.shareTargetPicker([flexMessage])
-                .then(res => {
-                    if (res) {
-                        // ผู้ใช้เลือกและแชร์สำเร็จ
-                        console.log("Message shared successfully.");
-                    } else {
-                        // ผู้ใช้ยกเลิกการแชร์
-                        console.log("Share cancelled by user.");
+        // ฟังก์ชันเมื่อ LIFF พร้อมใช้งาน
+        function handleAppReady() {
+            loadingDiv.classList.add('hidden');
+            appDiv.classList.remove('hidden');
+            shareButton.disabled = false;
+            statusMessage.textContent = 'เชื่อมต่อ LIFF สำเร็จแล้ว!';
+        }
+
+        // สร้าง Flex Message ที่ต้องการจะแชร์
+        function createFlexMessage() {
+            return {
+                "type": "flex",
+                "altText": "ข้อความ Flex Message ที่แชร์",
+                "contents": {
+                    "type": "bubble",
+                    "hero": {
+                        "type": "image",
+                        "url": "https://placehold.co/600x400/94A3B8/ffffff?text=Flex+Message",
+                        "size": "full",
+                        "aspectRatio": "20:13",
+                        "aspectMode": "cover"
+                    },
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "Flex Message Demo",
+                                "weight": "bold",
+                                "size": "xl",
+                                "align": "center",
+                                "color": "#2D3748"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "margin": "lg",
+                                "spacing": "sm",
+                                "contents": [
+                                    {
+                                        "type": "box",
+                                        "layout": "baseline",
+                                        "spacing": "sm",
+                                        "contents": [
+                                            {
+                                                "type": "text",
+                                                "text": "สถานะ:",
+                                                "color": "#9CA3AF",
+                                                "size": "sm",
+                                                "flex": 1
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": "พร้อมใช้งาน",
+                                                "wrap": true,
+                                                "color": "#4B5563",
+                                                "size": "sm",
+                                                "flex": 4
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "box",
+                                        "layout": "baseline",
+                                        "spacing": "sm",
+                                        "contents": [
+                                            {
+                                                "type": "text",
+                                                "text": "ผู้สร้าง:",
+                                                "color": "#9CA3AF",
+                                                "size": "sm",
+                                                "flex": 1
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": "Gemini",
+                                                "wrap": true,
+                                                "color": "#4B5563",
+                                                "size": "sm",
+                                                "flex": 4
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "footer": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "spacing": "sm",
+                        "contents": [
+                            {
+                                "type": "button",
+                                "style": "primary",
+                                "height": "sm",
+                                "action": {
+                                    "type": "uri",
+                                    "label": "ดูรายละเอียดเพิ่มเติม",
+                                    "uri": "https://developers.line.biz/en/docs/liff/using-share-target-picker/"
+                                },
+                                "color": "#10B981"
+                            },
+                            {
+                                "type": "button",
+                                "style": "secondary",
+                                "height": "sm",
+                                "action": {
+                                    "type": "uri",
+                                    "label": "LINE Developers",
+                                    "uri": "https://developers.line.biz/"
+                                },
+                                "color": "#F3F4F6"
+                            }
+                        ]
                     }
-                })
-                .catch(error => {
-                    console.error("Error sharing message", error);
-                    showMessage(`ข้อผิดพลาดในการแชร์: ${error.message}`);
-                });
+                }
+            };
         }
-        
-        // เริ่มต้นการทำงานเมื่อหน้าเว็บโหลดเสร็จ
-        window.onload = function() {
-            initializeLiff();
-        };
-    </script>
 
+        // ฟังก์ชันสำหรับแชร์ข้อความ
+        async function shareMessage() {
+            // ตรวจสอบว่าเปิดใน LINE หรือไม่
+            if (!liff.isInClient()) {
+                alert('กรุณาเปิด LIFF App ใน LINE เพื่อใช้งาน Share Target Picker');
+                return;
+            }
+
+            try {
+                // เรียกใช้ Share Target Picker
+                const flexMessage = createFlexMessage();
+                await liff.shareTargetPicker([flexMessage]);
+
+                statusMessage.textContent = 'แชร์ข้อความสำเร็จแล้ว!';
+                console.log('Flex Message shared successfully.');
+            } catch (err) {
+                if (err.code === "202") {
+                    console.log("Share Target Picker was cancelled.");
+                    statusMessage.textContent = 'การแชร์ถูกยกเลิก';
+                } else {
+                    console.error("Error sharing message:", err);
+                    statusMessage.textContent = `เกิดข้อผิดพลาดในการแชร์: ${err.message}`;
+                }
+            }
+        }
+
+        // เริ่มต้น LIFF เมื่อหน้าเว็บโหลดเสร็จ
+        window.addEventListener('load', initializeLiff);
+
+    </script>
 </body>
 </html>
